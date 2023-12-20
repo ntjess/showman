@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "showman"
+description = "Eval & show typst code outputs inline with their source"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+keywords = []
+authors = [{ name = "Nathan Jessurun", email = "ntjessu@gmail.com" }]
+dependencies = ["fire", "packaging", "pypandoc", "tomli"]
+dynamic = ["version"]
+
+[project.scripts]
+showman = "showman.__main__:main"
+
+[project.urls]
+Source = "https://github.com/ntjess/showman"
+
+[tool.hatch.version]
+path = "typst.toml"
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/formatter.typ" = "showman/formatter.typ"
