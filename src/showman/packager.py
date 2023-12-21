@@ -68,7 +68,7 @@ def create_package(
     toml_file: FilePath,
     typst_packages_folder: FilePath | None = None,
     package_paths: list[str | FilePath | dict[str, str]] | None = None,
-    namespace="preview",
+    namespace="local",
     overwrite=False,
     symlink=False,
 ):
@@ -93,8 +93,7 @@ def create_package(
         then the paths in the `paths` key of the `packager` table in the
         typst.toml file will be used.
     namespace:
-        The namespace of the package. Can be set to "local" when ``typst_packages_folder``
-        is a local typst folder.
+        The namespace of the package. Can be set to "preview" when ready to publish
     overwrite:
         Whether to overwrite the package if it already exists.
     symlink:
