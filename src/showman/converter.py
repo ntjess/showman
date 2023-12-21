@@ -181,9 +181,9 @@ class Converter:
         existing = self.get_exported_images()
         if len(existing) == 0:
             return
-        existing[0].unlink()
+        existing.pop(0).unlink()
         max_pad = len(str(len(existing)))
-        for ii, file in enumerate(existing[1:], start=1):
+        for ii, file in enumerate(existing, start=1):
             file.rename(file.parent / self.image_name.format(n=f"{ii:0{max_pad}d}"))
 
     def get_exported_images(self):
