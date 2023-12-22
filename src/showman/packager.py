@@ -27,7 +27,11 @@ def _parse_toml(toml_file: FilePath):
         toml_text = tomli.load(ifile)  # type: ignore
     version = toml_text["package"]["version"]
     package_name = toml_text["package"]["name"]
-    package_paths = toml_text["tool"]["packager"]["paths"]
+    package_paths = toml_text.get("tool", {}).get("packager", {}).get("paths", None)
+    if package_paths is None:
+        raise ValueError(
+            "No package files specified in typst.toml (tool.packager.paths)"
+        )
     if not isinstance(package_paths, list):
         raise TypeError(f"Expected list of paths in typst.toml, got {package_paths}")
     try:
