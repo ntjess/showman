@@ -50,12 +50,14 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
     hide(body)
   }
   
-  show: template
   locate(loc => {
     let outputs = query(to-search, loc)
     for output in outputs {
-      pagebreak()
-      block(output, above: 0pt, below: 0pt, breakable: false)
+      pagebreak(weak: true)
+      {
+        show: template
+        block(output, above: 0pt, below: 0pt, breakable: false)
+      }
     }
   })
 }

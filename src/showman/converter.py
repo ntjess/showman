@@ -89,6 +89,8 @@ class Converter:
         log_level="INFO",
     ):
         typst_file = Path(typst_file).resolve()
+        if not typst_file.exists():
+            raise FileNotFoundError(str(typst_file))
         if root_dir is None:
             root_dir = typst_file.parent
         root_dir = Path(root_dir).resolve()
@@ -156,7 +158,8 @@ class Converter:
         return td, to_compile
 
     def __del__(self):
-        self.build_dir.cleanup()
+        if hasattr(self, "build_dir"):
+            self.build_dir.cleanup()
 
     def generate_images(self, force=True):
         existing_files = self.get_exported_images()
