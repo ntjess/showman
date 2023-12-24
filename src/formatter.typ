@@ -79,7 +79,7 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
 
   show raw: raw-with-eval.with(
     langs: showman-config.runnable-langs,
-    eval-kwargs: showman-config.at("eval-kwargs", default: (:))
+    eval-kwargs: showman-config.at("eval-kwargs", default: (:)),
   )
   include(typst-file)
 }
@@ -87,25 +87,26 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
 #let template(
   body,
   theme: "light",
-  inline-raw-style: (:),
-  block-raw-style: (:),
+  raw-style: (block: (:), inline: (:)),
   runnable-langs: ("example",),
-  ..runnable-kwargs
+  ..runnable-kwargs,
 ) = {
   // Formatting inline raw code
+  let inline-style = raw-style.remove("inline", default: (:))
+  let block-style = raw-style.remove("block", default: (:))
+
+
   show raw: it => {
     let inline = not it.at("block", default: false)
     let use-kwargs = if inline {
-      inline-raw-style
+      inline-style + raw-style
     } else {
-      (width: 100%, ..block-raw-style)
+      (width: 100%, ..raw-style, ..block-style)
     }
     format-raw(inline: inline, ..use-kwargs, it)
   }
-  show raw: raw-with-eval.with(
-    langs: runnable-langs, ..runnable-kwargs
-  )
-  show config.output-label: format-raw.with(..block-raw-style)
+  show raw: raw-with-eval.with(langs: runnable-langs, ..runnable-kwargs)
+  show config.output-label: format-raw.with(..block-style)
 
   set text(font: "Linux Libertine")
   // Add variables here to avoid triggering error in Pandoc 3.1.10
