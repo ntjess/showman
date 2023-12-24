@@ -4,4 +4,5 @@ from pathlib import Path
 
 FilePath = str | Path
 OptionalFilePath = FilePath | None
-OptionalStrList = list[str] | str | None
+StrList = list[str] | str
+OptionalStrList = StrList | None
