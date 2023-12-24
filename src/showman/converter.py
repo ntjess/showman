@@ -33,7 +33,10 @@ def repo_url_to_raw(url):
     pieces = re.match(match_expr, url)
     if pieces is None:
         raise ValueError(f"Could not parse url {url}. Must be of form {match_expr}")
-    return url + "raw/"
+    # Shorten for access brevity
+    m = pieces.groupdict()
+    return f'https://www.{m["site"]}/{m["user"]}/{m["repo"]}/raw/{m["branch_or_tag"]}'
+    return url
 
 
 def _template(
@@ -259,6 +262,8 @@ class Converter:
         out_dir = Path(out_path).resolve().parent
         if remote_url is not None:
             out_dir = repo_url_to_raw(remote_url)
+            rel_assets = os.path.relpath(self.assets_dir, start=self.root_dir)
+            out_dir = f"{out_dir}/{rel_assets}"
         out_text = self.get_markdown_with_injected_images(out_dir)
         with open(out_path, "wb") as f:
             f.write(bytes(out_text, encoding="utf-8"))
