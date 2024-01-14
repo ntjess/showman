@@ -15,12 +15,16 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
 #let _bidir-grid(direction, expand-first-item: true, ..args) = {
   let n-args = args.pos().len()
   let grid-kwargs = (:)
-  if direction == ltr {
+  if direction in (ltr, rtl) {
     grid-kwargs = (columns: (auto,) * n-args, column-gutter: 1em)
   } else {
     grid-kwargs = (rows: n-args, row-gutter: 1em)
   }
-  grid(..grid-kwargs, ..args)
+  let pos = args.pos()
+  if direction in (rtl, btt) {
+    pos = pos.rev()
+  }
+  grid(..grid-kwargs, ..pos, ..args.named())
 }
 
 #let _fetch-result-from-cache(result-cache, index: -1) = {

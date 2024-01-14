@@ -10,7 +10,7 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
   } else {
     (block.with(breakable: false), 0.5em)
   }
-  container(fill: rgb("#8884"), inset: unit, radius: unit, ..args)
+  container(fill: rgb("#ddd6"), inset: unit, radius: unit, ..args)
 }
 
 #let _add-raw-line-numbers(it) = {
