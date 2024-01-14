@@ -65,6 +65,7 @@ def _copy_entry(
     elif source.is_dir():
         shutil.copytree(source, dest, dirs_exist_ok=True)
     else:
+        dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(source, dest)
 
 
@@ -88,10 +89,9 @@ def create_package(
         typst folder or a git clone of the packages repo. The latter is useful when
         publishing your package to the official registry. See
         "https://github.com/typst/packages/?tab=readme-ov-file#local-packages" for which
-        path is read by typst depending on your system. If ``None``:
-        - If the ``TYPST_PACKAGES_FOLDER`` environment variable is set, then that path
-            will be used.
-        - Otherwise, Typst's local package folder will be used.
+        path is read by typst depending on your system. If ``None``, Typst's local
+        package folder will be used unless the ``TYPST_PACKAGES_FOLDER`` environment
+        variable is set.
     package_paths:
         The paths to the files and folders to include in the package. If None,
         then the paths in the `paths` key of the `packager` table in the
