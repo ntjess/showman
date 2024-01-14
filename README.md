@@ -164,3 +164,19 @@ showman package <path-to-toml-file>
 
 **Note**: You can see the full list of command options with
 `showman package --help`.
+
+# Executing code
+
+This package also executes non-typst code (currently bash on
+non-windows, python, and c++). You can use
+`showman execute ./path/to/file.typ` to execute code blocks in these
+languages, and the output will be captured in a `.coderunner.json` file
+in the root directory you specified. To enable this feature, you need to
+add the following preamble to your file:
+
+``` typ
+#import "@preview/showman:0.1.0": runner
+
+#let cache = json("/.coderunner.json").at("path/to/file.typ", default: (:))
+#let show-rule = runner.external-code.with(result-cache: cache)
+```

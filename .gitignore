@@ -1,4 +1,4 @@
 __pycache__
 
-tests/*assets*
-tests/*.md
+examples/*assets*
+examples/*.md
