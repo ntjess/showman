@@ -1,6 +1,6 @@
 # Showman
 
-![](./showman.jpg)
+<img src="https://www.github.com/ntjess/showman/raw/v0.1.0/showman.jpg" style="width:1.38889in" />
 
 ------------------------------------------------------------------------
 
@@ -14,11 +14,13 @@ process.
   `showman` do the rest! In one command, it will the readme to markdown
   and render code block outputs as included images.
 
-  - Bonues points – let `showman` know your repository path and it will
+  - Bonus points – let `showman` know your repository path and it will
     ensure images will properly appear in your readme even after your
     package has been distributed through typst’s registry.
 
-## Installation
+- Execute non-typst code blocks and render their outputs
+
+# Installation
 
 **Prerequisites**: Make sure you have `typst` and `pandoc` available
 from the command line. Then, in a python virtual environment, run:
@@ -40,15 +42,15 @@ The optional last step lets you import `showman` it in your code with
 After enough people test this package, I will submit it as an official
 typst package and it will be directly available as a `@preview` citizen.
 
-## Usage
-
-### Converting your readme to markdown
+# Converting your readme to markdown
 
 Create a typst file with ```` ```example ```` code blocks that show the
 output you want to include in your readme. For instance:
 
 ``` typst
 #import "@preview/cetz:0.1.2"
+// Just to avoid showing this heading in the readme itself
+#set heading(outlined: false)
 
 = Hello, world!
 Let's do something complicated:
@@ -67,7 +69,7 @@ Let's do something complicated:
   })
 })
 ```
-![Example 1](assets/example-1.png)
+![Example 1](https://www.github.com/ntjess/showman/raw/v0.1.0/assets/example-1.png)
 
 Then, run the following command:
 
@@ -117,7 +119,7 @@ directly:
 )
 ```
 
-### Caveats
+## Caveats
 
 - `showman` uses the beautiful `pandoc` to do most of the markdown
   conversion heavy lifting. So, if your document can’t be processed by
@@ -128,7 +130,7 @@ directly:
   must use containers to extract each rendered example, you can’t use
   `#set page(...)` or `#pagebreak()` inside your examples.
 
-## Publishing your package
+# Publishing your package
 
 You’ve done the hard work of creating a beautiful, well-documented
 manual. Now it’s time to share it with the world. `showman` can help you
