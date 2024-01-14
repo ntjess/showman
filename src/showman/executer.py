@@ -1,22 +1,54 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
-import sys
 import subprocess
+import sys
+import tempfile
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
 
-import logging
-
 from showman.common import FilePath, OptionalFilePath, StrList
+
+
+def python_executor(block: str):
+    with redirect_stdout(StringIO()) as f:
+        exec(block, globals())
+        out = f.getvalue()
+    return out
+
+
+def bash_executor(block: str):
+    if sys.platform == "win32":
+        raise NotImplementedError("Bash executer not implemented for Windows")
+    out = subprocess.check_output(block, shell=True, text=True)
+    return out
+
+
+def cpp_executor(block: str, compiler="g++"):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpdir = Path(tmpdir)
+        cpp_file = tmpdir / "main.cpp"
+        cpp_file.write_text(block)
+        out = subprocess.check_output(
+            f"{compiler} {cpp_file} -o {tmpdir}/main && {tmpdir}/main",
+            shell=True,
+            text=True,
+        )
+    return out
 
 
 class CodeRunner:
     def __init__(self, workspace_dir: FilePath):
         self.workspace_dir = Path(workspace_dir).resolve()
         self.logger = logging.getLogger(__name__)
+        self.language_executor_map = dict(
+            python=python_executor,
+            bash=bash_executor,
+            cpp=cpp_executor,
+        )
 
         self.cache_file = cache_file = self.workspace_dir / ".coderunner.json"
         if not cache_file.exists():
@@ -53,8 +85,7 @@ class CodeRunner:
 
     def get_labeled_blocks(self, file: FilePath, label: str):
         """
-        Retrieves the python code blocks from a typ file requested to be run based on their
-        label.
+        Retrieves code blocks from a typ file requested to be run based on their label.
 
         Parameters
         ----------
@@ -81,7 +112,7 @@ class CodeRunner:
         result = json.loads(subprocess.check_output(cmd, shell=True, text=True))
         return result
 
-    def exec_blocks_and_capture_outputs(self, blocks: list[str]):
+    def exec_blocks_and_capture_outputs(self, blocks: list[str], language: str):
         """
         Evaluates a list of python code blocks in a single python session. stdout from each
         block evaluation is separately captured.
@@ -97,12 +128,10 @@ class CodeRunner:
         """
         outputs = []
         for block in blocks:
-            with redirect_stdout(StringIO()) as f:
-                self.logger.debug(f"Executing block:\n{block}")
-                exec(block, globals())
-                out = f.getvalue()
-                self.logger.debug(f"Block output: {out}")
-                outputs.append(out)
+            self.logger.debug(f"Executing block:\n{block}")
+            out = self.language_executor_map[language](block)
+            self.logger.debug(f"Block output: {out}")
+            outputs.append(out)
         return outputs
 
     def run(self, typst_file: FilePath, labels: StrList, save_cache=True):
@@ -110,7 +139,7 @@ class CodeRunner:
             labels = [labels]
         for label in labels:
             blocks = self.get_labeled_blocks(typst_file, label=label)
-            outputs = self.exec_blocks_and_capture_outputs(blocks)
+            outputs = self.exec_blocks_and_capture_outputs(blocks, language=label)
             self.update_cache(typst_file, label, outputs)
         if save_cache:
             self.save_cache()
@@ -119,7 +148,7 @@ class CodeRunner:
 def execute(
     file: FilePath,
     root_dir: OptionalFilePath = None,
-    labels: StrList = "python",
+    labels: StrList | None = None,
 ):
     """
     Executes external code in a typst file based on the code block labels.
@@ -133,9 +162,12 @@ def execute(
     label:
         The label or labels of the blocks to be retrieved. If an executor is registered
         for a given block language, the block will be run and its output will be saved
-        to the cache.
+        to the cache. If not specified, every language with a registered executor
+        will be run.
     """
     runner = CodeRunner(root_dir or os.getcwd())
+    if labels is None:
+        labels = list(runner.language_executor_map)
     # runner.logger.setLevel("DEBUG")
     runner.logger.addHandler(logging.StreamHandler(sys.stdout))
     runner.run(file, labels=labels)
