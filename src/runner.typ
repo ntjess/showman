@@ -12,7 +12,11 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
   input-label: <example-input>,
 )
 
-#let _bidir-grid(direction, expand-first-item: true, ..args) = {
+#let bidirectional-grid(direction: auto, ..args) = {
+  // More complex logic can determine auto layout in the future
+  if direction == auto {
+    direction = ltr
+  }
   let n-args = args.pos().len()
   let grid-kwargs = (:)
   if direction in (ltr, rtl) {
@@ -36,7 +40,12 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
   }
 }
 
-#let external-code(raw-content, result-cache: (:), direction: ltr, scope: (:)) = {
+#let external-code(raw-content,
+  result-cache: (:),
+  direction: auto,
+  scope: (:),
+  container: bidirectional-grid,
+) = {
   let input-source = raw-content.text
   let lang = raw-content.at("lang", default: "default")
   [#metadata(input-source)#label(lang)]
@@ -50,11 +59,7 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
       #_fetch-result-from-cache(result-cache.at(lang, default: ()), index: idx)
       #config.output-label
     ]
-    if output == none {
-      raw-content
-    } else {
-      _bidir-grid(direction, raw-content, output)
-    }
+    container(direction: direction, raw-content, output)
   })
 }
 
@@ -70,11 +75,12 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
 
 #let standalone-example(
   raw-content,
-  direction: ltr,
+  direction: auto,
   eval-prefix: "",
   eval-suffix: "",
   unpack-modules: false,
   scope: (:),
+  container: bidirectional-grid,
 ) = {
   let pieces = (eval-prefix, raw-content.text, eval-suffix)
   if unpack-modules {
@@ -87,7 +93,7 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
     #set text(font: "Linux Libertine")
     #output#config.output-label
   ]
-  _bidir-grid(direction, ..grid-args)
+  container(direction: direction, ..grid-args)
 }
 
 
