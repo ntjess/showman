@@ -1,4 +1,4 @@
-#import "@local/showman:0.1.0": runner, formatter
+#import "@preview/showman:0.1.0": runner, formatter
 
 #show raw: it => {
   let kwargs = if it.block {

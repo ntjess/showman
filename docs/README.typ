@@ -1,9 +1,8 @@
-#import "@local/showman:0.1.0": formatter
+#import "@preview/showman:0.1.0": formatter
 
 #set page(height: auto)
 #show: formatter.template.with(
   // theme: "dark",
-  eval-kwargs: (direction: ltr),
 )
 
 = Showman
@@ -28,20 +27,8 @@ Automagic tools to smooth the package documentation & development process.
 python virtual environment, run:
 
 ```bash
-git clone https://github.com/ntjess/showman.git
-cd showman
-pip install -e .
-# Optional:
-# showman package typst.toml
+pip install showman
 ```
-The optional last step lets you import `showman` it in your code with
-
-```typ
-#import "@local/showman:0.1.0"
-```
-
-After enough people test this package, I will submit it as an official typst package and it will be
-directly available as a `@preview` citizen.
 
 = Converting your readme to markdown
 Create a typst file with #raw("```example") code blocks that show the output you want to include in
@@ -121,6 +108,23 @@ that gets prefixed to every example. Alternatively, pass variables in a scope di
 - Typst doesn't allow page styling inside containers. Since `showman` must use containers to extract
   each rendered example, you can't use `#set page(...)` or `#pagebreak()` inside your examples.
 
+
+= Rendering examples in typst
+If you don't care about converting your readme to markdown, it's even easier to have example rendered alongside their code. Simply add the following preamble to your file:
+
+````typst
+#import "@preview/showman:0.1.0"
+#show: showman.formatter.template
+
+The code below will be rendered side by side with its output:
+
+```example
+= Hello world!
+```
+
+Several keywords can be privded to customize appearance and more. See `showman.formatter.template` for more details.
+````
+
 = Publishing your package
 
 You've done the hard work of creating a beautiful, well-documented manual. Now it's time to share it
@@ -163,4 +167,9 @@ To enable this feature, you need to add the following preamble to your file:
 
 #let cache = json("/.coderunner.json").at("path/to/file.typ", default: (:))
 #let show-rule = runner.external-code.with(result-cache: cache)
+
+// Now, apply the show rule
+#show: show-rule
 ```
+
+You can optionally style `<example-input>` and `<example-output>` labels to customize how input and output blocks appear.

@@ -36,7 +36,7 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
   }
 }
 
-#let external-code(raw-content, result-cache: (:), direction: ttb, scope: (:)) = {
+#let external-code(raw-content, result-cache: (:), direction: ltr, scope: (:)) = {
   let input-source = raw-content.text
   let lang = raw-content.at("lang", default: "default")
   [#metadata(input-source)#label(lang)]
@@ -70,7 +70,7 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
 
 #let standalone-example(
   raw-content,
-  direction: ttb,
+  direction: ltr,
   eval-prefix: "",
   eval-suffix: "",
   unpack-modules: false,
