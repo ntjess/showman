@@ -169,7 +169,7 @@ To enable this feature, you need to add the following preamble to your file:
 #let show-rule = runner.external-code.with(result-cache: cache)
 
 // Now, apply the show rule
-#show: show-rule
+#show raw.where(lang: "python"): show-rule
 ```
 
 You can optionally style `<example-input>` and `<example-output>` labels to customize how input and output blocks appear.
