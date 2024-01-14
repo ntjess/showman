@@ -2,28 +2,42 @@
 
 #show raw: it => {
   let kwargs = if it.block {
-    (width: 100%)
+    (width: 100%, line-numbers: true)
   } else {
-    (inline: true)  
+    (inline: true)
   }
   formatter.format-raw(it, ..kwargs)
 
 }
+
 #show <example-output>: formatter.format-raw
+// #show <example-input>: formatter.format-raw
 
 #let cache = json("/.coderunner.json").at("examples/external-code.typ", default: (:))
-#let show-rule = runner.external-code.with(result-cache: cache, direction: ttb)
+#let show-rule = runner.external-code.with(
+  result-cache: cache,
+  direction: ttb,
+)
 
-// These show rules only add style; they aren't necessary to generate outputs
 #show raw.where(lang: "python"): show-rule
 #show raw.where(lang: "bash"): show-rule
 #show raw.where(lang: "cpp"): show-rule
+#show raw.where(lang: "typ"): runner.standalone-example.with(
+  direction: ttb
+)
 
 The outputs for each language will be visible after running
 ```
 showman execute ./examples/external-code.typ
 ```
 *Note*: If you're on Windows, the `bash` example will not evaluate.
+
+`typst` will render for free, independent of `showman execute`:
+
+```typ
+= Hello world! Here's some code.
+#lorem(10)
+```
 
 ```python
 import functools
@@ -54,7 +68,7 @@ int fib(int n, std::vector<int> &cache) {
 
 int main() {
     std::vector<int> cache(101, -1);
-    std::cout << fib(30, cache) << std::endl;
+    std::cout << fib(32, cache) << std::endl;
     return 0;
 }
 ```
