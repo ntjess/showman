@@ -56,13 +56,9 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
   })
   locate(loc => {
     let idx = label-counters.at(loc).at(lang)
-    let output = [
-      #_fetch-result-from-cache(result-cache.at(lang, default: ()), index: idx)
-      #config.output-label
-    ]
-    let input = [
-      #raw-content#config.input-label
-    ]
+    let fetched = _fetch-result-from-cache(result-cache.at(lang, default: ()), index: idx)
+    let output = [#fetched#config.output-label]
+    let input = [#raw-content#config.input-label]
     container(direction: direction, input, output)
   })
 }
