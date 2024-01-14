@@ -21,8 +21,6 @@ def python_executor(block: str):
 
 
 def bash_executor(block: str):
-    if sys.platform == "win32":
-        raise NotImplementedError("Bash executer not implemented for Windows")
     out = subprocess.check_output(block, shell=True, text=True)
     return out
 
@@ -46,9 +44,10 @@ class CodeRunner:
         self.logger = logging.getLogger(__name__)
         self.language_executor_map = dict(
             python=python_executor,
-            bash=bash_executor,
             cpp=cpp_executor,
         )
+        if sys.platform != "win32":
+            self.language_executor_map["bash"] = bash_executor
 
         self.cache_file = cache_file = self.workspace_dir / ".coderunner.json"
         if not cache_file.exists():
@@ -126,6 +125,8 @@ class CodeRunner:
         -------
         A list of stdout outputs from each block evaluation
         """
+        if language not in self.language_executor_map:
+            raise ValueError(f"Language `{language}` not supported")
         outputs = []
         for block in blocks:
             self.logger.debug(f"Executing block:\n{block}")
