@@ -328,7 +328,3 @@ def to_markdown(
         log_level,
     )
     converter.save(output, remote_url=git_url, force=force)
-
-
-if __name__ == "__main__":
-    to_markdown("tests/tada-overview.typ", root_dir=".", log_level="DEBUG")
