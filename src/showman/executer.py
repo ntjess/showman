@@ -13,19 +13,19 @@ from pathlib import Path
 from showman.common import FilePath, OptionalFilePath, StrList
 
 
-def python_executor(block: str):
+def python_executer(block: str):
     with redirect_stdout(StringIO()) as f:
         exec(block, globals())
         out = f.getvalue()
     return out
 
 
-def bash_executor(block: str):
+def bash_executer(block: str):
     out = subprocess.check_output(block, shell=True, text=True)
     return out
 
 
-def cpp_executor(block: str, compiler="g++"):
+def cpp_executer(block: str, compiler="g++"):
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
         cpp_file = tmpdir / "main.cpp"
@@ -42,12 +42,12 @@ class CodeRunner:
     def __init__(self, workspace_dir: FilePath):
         self.workspace_dir = Path(workspace_dir).resolve()
         self.logger = logging.getLogger(__name__)
-        self.language_executor_map = dict(
-            python=python_executor,
-            cpp=cpp_executor,
+        self.language_executer_map = dict(
+            python=python_executer,
+            cpp=cpp_executer,
         )
         if sys.platform != "win32":
-            self.language_executor_map["bash"] = bash_executor
+            self.language_executer_map["bash"] = bash_executer
 
         self.cache_file = cache_file = self.workspace_dir / ".coderunner.json"
         if not cache_file.exists():
@@ -125,12 +125,12 @@ class CodeRunner:
         -------
         A list of stdout outputs from each block evaluation
         """
-        if language not in self.language_executor_map:
+        if language not in self.language_executer_map:
             raise ValueError(f"Language `{language}` not supported")
         outputs = []
         for block in blocks:
             self.logger.debug(f"Executing block:\n{block}")
-            out = self.language_executor_map[language](block)
+            out = self.language_executer_map[language](block)
             self.logger.debug(f"Block output: {out}")
             outputs.append(out)
         return outputs
@@ -161,14 +161,14 @@ def execute(
     root_dir:
         The root directory of the workspace. Defaults to the current working directory.
     label:
-        The label or labels of the blocks to be retrieved. If an executor is registered
+        The label or labels of the blocks to be retrieved. If an executer is registered
         for a given block language, the block will be run and its output will be saved
-        to the cache. If not specified, every language with a registered executor
+        to the cache. If not specified, every language with a registered executer
         will be run.
     """
     runner = CodeRunner(root_dir or os.getcwd())
     if labels is None:
-        labels = list(runner.language_executor_map)
+        labels = list(runner.language_executer_map)
     # runner.logger.setLevel("DEBUG")
     runner.logger.addHandler(logging.StreamHandler(sys.stdout))
     runner.run(file, labels=labels)
