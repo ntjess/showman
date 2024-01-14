@@ -189,9 +189,12 @@ add the following preamble to your file:
 #let cache = json("/.coderunner.json").at("path/to/file.typ", default: (:))
 #let show-rule = runner.external-code.with(result-cache: cache)
 
-// Now, apply the show rule
-#show: show-rule
+// Now, apply the show rule to languages that have a `showman execute` result:
+#show raw.where(lang: "python"): show-rule
 ```
 
 You can optionally style `<example-input>` and `<example-output>` labels
-to customize how input and output blocks appear.
+to customize how input and output blocks appear. For even deeper
+customization, you can specify the `container` that displays the input
+and output blocks that accepts a keyword `direction` and positional
+`input` and `output`.
