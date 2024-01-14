@@ -40,7 +40,8 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
   }
 }
 
-#let external-code(raw-content,
+#let external-code(
+  raw-content,
   result-cache: (:),
   direction: auto,
   scope: (:),
@@ -59,7 +60,10 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
       #_fetch-result-from-cache(result-cache.at(lang, default: ()), index: idx)
       #config.output-label
     ]
-    container(direction: direction, raw-content, output)
+    let input = [
+      #raw-content#config.input-label
+    ]
+    container(direction: direction, input, output)
   })
 }
 
