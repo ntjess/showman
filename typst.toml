@@ -10,4 +10,4 @@ authors = ["Nathan Jessurun"]
 license = "Unlicense"
 
 [tool.packager]
-paths = ["lib.typ", "src/formatter.typ", "src/runner.typ"]
+paths = ["lib.typ", "src/formatter.typ", "src/runner.typ", "README.md"]
