@@ -122,7 +122,6 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
 
   let grid-args = (box(width: 1fr)[#raw-content#config.input-label], )
   grid-args.push[
-    #set text(font: "Linux Libertine")
     #output#config.output-label
   ]
   container(direction: direction, ..grid-args)
