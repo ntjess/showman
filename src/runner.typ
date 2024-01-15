@@ -31,13 +31,45 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
   grid(..grid-kwargs, ..pos, ..args.named())
 }
 
+#let _natural-sized-image(content, format: "svg") = {
+  style(styles => {
+    let (width, height) = measure(
+      image.decode(content, format: format), styles
+    )
+    image.decode(content, format: format, width: width, height: height)
+  })
+}
+
+#let _result-decoder-map = (
+  svg: _natural-sized-image.with(format: "svg"),
+  png: _natural-sized-image.with(format: "png"),
+  jpeg: _natural-sized-image.with(format: "jpeg"),
+  gif: _natural-sized-image.with(format: "gif"),
+  jpg: _natural-sized-image.with(format: "jpeg"),
+  text: it => it,
+)
+
+#let _format-result(result) = {
+  let typ = type(result)
+  if typ == array {
+    return result.map(_format-result).join("\n")
+  } else if typ == dictionary {
+    let content = result.at("content")
+    let content-type = result.at("type", default: "text")
+    if content-type not in _result-decoder-map {
+      panic("Unknown content type: " + content-type)
+    }
+    return _result-decoder-map.at(content-type)(content)
+  } else if typ == type(none) {
+    return [\<Not yet evaluated\>]
+  } else {
+    return result
+  }
+}
+
 #let _fetch-result-from-cache(result-cache, index: -1) = {
   let out = result-cache.at(index, default: none)
-  if out == none {
-    [\<Not yet evaluated\>]
-  } else {
-    out
-  }
+  _format-result(out)
 }
 
 #let external-code(
