@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import ast
+import inspect
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 import tempfile
+import typing as t
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
@@ -13,11 +17,73 @@ from pathlib import Path
 from showman.common import FilePath, OptionalFilePath, StrList
 
 
-def python_executer(block: str):
-    with redirect_stdout(StringIO()) as f:
-        exec(block, globals())
-        out = f.getvalue()
-    return out
+class PythonExecuter:
+    def exec_and_maybe_eval_last_line(self, code_string, globals_=None, locals_=None):
+        """
+        Execute a multi-line string of Python code. If the last line is an expression,
+        return its value. Otherwise, execute the entire code and return None.
+
+        Parameters
+        ----------
+        code_string
+            A string containing Python code.
+        globals_
+            A dictionary defining the global namespace, defaults to globals().
+        locals_
+            (Optional) A dictionary defining the local namespace.
+
+        Returns
+        -------
+        The value of the last expression, if any, else None.
+        """
+        if globals_ is None:
+            globals_ = globals()
+        try:
+            parsed_code = ast.parse(code_string, mode="exec")
+
+            if isinstance(parsed_code.body[-1], ast.Expr):
+                *rest_of_code, last_expr = parsed_code.body
+                last_expr = t.cast(ast.Expr, last_expr)
+                exec(
+                    compile(
+                        ast.Module(body=rest_of_code, type_ignores=[]),
+                        "<string>",
+                        "exec",
+                    ),
+                    globals_,
+                    locals_,
+                )
+                return eval(
+                    compile(ast.Expression(last_expr.value), "<string>", "eval"),
+                    globals_,
+                    locals_,
+                )
+            else:
+                exec(code_string, globals_, locals_)
+                return None
+        except SyntaxError as se:
+            return f"SyntaxError: {se}"
+        except Exception as e:
+            return f"Error: {e}"
+
+    def _resolve_return_value(self, stdout, result):
+        if result is None:
+            return stdout
+        if not stdout:
+            return result
+        if isinstance(result, str):
+            return "\n".join([stdout, result])
+        return [stdout, result]
+
+    def __call__(self, block: str):
+        with redirect_stdout(StringIO()) as f:
+            result = self.exec_and_maybe_eval_last_line(block)
+            printed = f.getvalue()
+        if result is not None:
+            # In the future (when typst supports pdf/html embeds), we can parse using
+            # _repr_html_ and friends
+            result = str(result)
+        return self._resolve_return_value(printed, result)
 
 
 def bash_executer(block: str):
@@ -39,15 +105,15 @@ def cpp_executer(block: str, compiler="g++"):
 
 
 class CodeRunner:
+    language_executer_map: t.Dict[str, t.Callable] = dict(
+        python=PythonExecuter(), cpp=cpp_executer
+    )
+    if sys.platform != "win32":
+        language_executer_map["bash"] = bash_executer
+
     def __init__(self, workspace_dir: FilePath):
         self.workspace_dir = Path(workspace_dir).resolve()
         self.logger = logging.getLogger(__name__)
-        self.language_executer_map = dict(
-            python=python_executer,
-            cpp=cpp_executer,
-        )
-        if sys.platform != "win32":
-            self.language_executer_map["bash"] = bash_executer
 
         self.cache_file = cache_file = self.workspace_dir / ".coderunner.json"
         if not cache_file.exists():
@@ -172,3 +238,7 @@ def execute(
     # runner.logger.setLevel("DEBUG")
     runner.logger.addHandler(logging.StreamHandler(sys.stdout))
     runner.run(file, labels=labels)
+
+
+if __name__ == "__main__":
+    execute("examples/external-code.typ", labels=["python"])
