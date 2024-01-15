@@ -1,4 +1,5 @@
 #import "@preview/showman:0.1.0": runner, formatter
+#set page(height: auto)
 
 #show raw: it => {
   let kwargs = if it.block {
@@ -19,25 +20,36 @@
   direction: ttb,
 )
 
-#show raw.where(lang: "python"): show-rule
-#show raw.where(lang: "bash"): show-rule
-#show raw.where(lang: "cpp"): show-rule
-#show raw.where(lang: "typ"): runner.standalone-example.with(
-  direction: ttb
-)
 
+= A mini rosseta code example: Fibonacci numbers
 The outputs for each language will be visible after running
-```
+```bash
 showman execute ./examples/external-code.typ
 ```
-*Note*: If you're on Windows, the `bash` example will not evaluate.
+- *Note*: If you're on Windows, the `bash` example will not evaluate.
+- `typst` will render for free, independent of `showman execute`.
 
-`typst` will render for free, independent of `showman execute`:
+#show raw: it => {
+  heading(it.lang)
+  if it.lang != "typst" {
+    show-rule(it)
+  } else {
+    runner.standalone-example(it, direction: ttb)
+  }
+}
 
-```typ
-= Hello world! Here's some code.
-#lorem(10)
-```
+
+```typst
+#let fib(n) = {
+  if n < 2 {
+    n
+  } else {
+    // Typst memoizes by default :)
+    fib(n - 1) + fib(n - 2)
+  }
+}
+#fib(50)
+``` 
 
 ```python
 import functools
@@ -48,14 +60,14 @@ def fib(n):
         return n
     return fib(n-1) + fib(n-2)
 
-print(fib(30))
+fib(50)
 ```
 
 ```cpp
 #include <iostream>
 #include <vector>
-
-int fib(int n, std::vector<int> &cache) {
+typedef unsigned long long ulong;
+ulong fib(ulong n, std::vector<ulong> &cache) {
     if (n < 2) {
         return n;
     }
@@ -67,8 +79,8 @@ int fib(int n, std::vector<int> &cache) {
 }
 
 int main() {
-    std::vector<int> cache(101, -1);
-    std::cout << fib(32, cache) << std::endl;
+    std::vector<ulong> cache(101, -1);
+    std::cout << fib(50, cache) << std::endl;
     return 0;
 }
 ```
