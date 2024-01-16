@@ -30,7 +30,9 @@ showman execute ./examples/external-code.typ
 - `typst` will render for free, independent of `showman execute`.
 
 #show raw: it => {
-  heading(it.lang)
+  if it.at("label", default: none) != <continue> {
+    heading(it.lang)
+  }
   if it.lang != "typst" {
     show-rule(it)
   } else {
@@ -85,6 +87,32 @@ int main() {
 }
 ```
 
+```c
+#include <stdio.h>
+
+typedef unsigned long long ulong;
+unsigned long long fib(ulong n, ulong *cache) {
+    if (n < 2) {
+        return n;
+    }
+    // Warning -- this can result in buffer overflow
+    if (cache[n] != -1) {
+        return cache[n];
+    }
+    cache[n] = fib(n-1, cache) + fib(n-2, cache);
+    return cache[n];
+}
+
+int main() {
+    ulong cache[101];
+    for (ulong i = 0; i < 101; i++) {
+        cache[i] = -1;
+    }
+    printf("%llu\n", fib(50, cache));
+    return 0;
+}
+```
+
 ```bash
 fib() {
     local n=$1
@@ -121,8 +149,7 @@ fib <- local({
   function(x) {
     valueName <- as.character(x)
     if (!is.null(memory[[valueName]])) return(memory[[valueName]])
-    if (x == 0) return(0)
-    if (x == 1) return(1)
+    if (x < 2) return(x)
     res <- Recall(x - 1) + Recall(x - 2)
     memory[[valueName]] <<- res # store results
     res
@@ -130,3 +157,8 @@ fib <- local({
 })
 print(fib(50))
 ```
+
+The execution environment persists across code blocks:
+```r
+print(fib(25))
+```<continue>
