@@ -4,6 +4,7 @@ import ast
 import json
 import logging
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -25,14 +26,6 @@ from showman.common import (
     read_config,
     read_showman_config,
 )
-
-
-class ExecuterOptions(t.TypedDict):
-    command: str
-    prompt: str | list[str]
-    preamble: str
-    repl: bool
-    filename: str
 
 
 class SpawnWrapper(PopenSpawn):
@@ -61,7 +54,7 @@ class SpawnWrapper(PopenSpawn):
 
 
 class ShellExecuter:
-    def __init__(self, language: str, config: ExecuterOptions, timeout=5):
+    def __init__(self, language: str, config: dict, timeout=5):
         self.config = config
         self.language = language
         self.timeout = config.get("timeout", timeout)
@@ -104,9 +97,15 @@ class ShellExecuter:
 
     def __call__(self, code: str):
         code += "\n"
+        if self.config.get("input-transform"):
+            code = eval(self.config["input-transform"], dict(input=code))
         if self.repl is None:
-            return self._run_standalone_command(code)
-        return self.repl.run_command(code)
+            out = self._run_standalone_command(code)
+        else:
+            out = self.repl.run_command(code)
+        if self.config.get("output-transform"):
+            out = eval(self.config["output-transform"], dict(output=out, re=re))
+        return out
 
     def cleanup(self):
         if self.repl is not None:
