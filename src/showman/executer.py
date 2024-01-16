@@ -187,8 +187,6 @@ class PythonExecuter:
 
 class CodeRunner:
     language_executer_map: t.Dict[str, t.Callable] = dict(python=PythonExecuter())
-    if sys.platform == "win32":
-        language_executer_map["bash"] = lambda _: "<bash is not supported on Windows>"
 
     def __init__(self, workspace_dir: FilePath, config: dict | None = None):
         self.config = config or {}
