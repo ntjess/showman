@@ -17,7 +17,7 @@ command = "gcc main.c -o main && main"
 [executer.r]
 repl = true
 prompt = ""
-command = "Rterm -q --ess --no-save --no-echo"
+command = "R -q --ess --no-save --no-echo"
 output-transform = "re.sub('^\\[\\d+\\] ', '', output)"
 
 [executer.rs]
