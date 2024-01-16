@@ -112,7 +112,7 @@ class ShellExecuter:
         if self.repl is not None:
             self.repl.child.kill(signal.SIGINT)
             # Wait for the process to die
-            self.repl.child.read_nonblocking(size=100, timeout=1)
+            self.repl.child.read_nonblocking(size=100, timeout=0.1)  # type: ignore
         if self.build_dir is not None:
             self.build_dir.rmdir()
 
