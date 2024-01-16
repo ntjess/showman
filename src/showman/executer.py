@@ -258,7 +258,7 @@ class CodeRunner:
         result = json.loads(subprocess.check_output(cmd, shell=True, text=True))
         return result
 
-    def exec_blocks_and_capture_outputs(self, blocks: list[str], language: str):
+    def exec_blocks_and_capture_outputs(self, blocks: list[str], lang: str):
         """
         Evaluates a list of python code blocks in a single python session. stdout from each
         block evaluation is separately captured.
@@ -267,34 +267,34 @@ class CodeRunner:
         ----------
         blocks:
             A list of python code blocks to be evaluated
+        lang:
+            The language of the blocks to be evaluated
 
         Returns
         -------
         A list of stdout outputs from each block evaluation
         """
-        if language not in self.language_executer_map and language not in self.config:
-            raise ValueError(f"Language `{language}` not supported")
-        elif language not in self.language_executer_map:
-            self.language_executer_map[language] = ShellExecuter(
-                language, self.config[language]
-            )
+        if lang not in self.language_executer_map and lang not in self.config:
+            raise ValueError(f"Language `{lang}` not supported")
+        elif lang not in self.language_executer_map:
+            self.language_executer_map[lang] = ShellExecuter(lang, self.config[lang])
         outputs = []
         for block in blocks:
             self.logger.debug(f"Executing block:\n{block}")
-            out = self.language_executer_map[language](block)
+            out = self.language_executer_map[lang](block)
             self.logger.debug(f"Block output: {out}")
             outputs.append(out)
         return outputs
 
-    def run(self, typst_file: FilePath, labels: StrList, save_cache=True):
-        if isinstance(labels, str):
-            labels = [labels]
-        for label in labels:
-            blocks = self.get_labeled_blocks(typst_file, label=label)
+    def run(self, typst_file: FilePath, langs: StrList, save_cache=True):
+        if isinstance(langs, str):
+            langs = [langs]
+        for lang in langs:
+            blocks = self.get_labeled_blocks(typst_file, label=lang)
             if not blocks:
                 continue
-            outputs = self.exec_blocks_and_capture_outputs(blocks, language=label)
-            self.update_cache(typst_file, label, outputs)
+            outputs = self.exec_blocks_and_capture_outputs(blocks, lang=lang)
+            self.update_cache(typst_file, lang, outputs)
         if save_cache:
             self.save_cache()
 
@@ -302,7 +302,7 @@ class CodeRunner:
 def execute(
     file: FilePath,
     root_dir: OptionalFilePath = None,
-    labels: StrList | None = None,
+    langs: StrList | None = None,
     config: str | dict | None = None,
     dotlist: str | None = None,
 ):
@@ -315,11 +315,11 @@ def execute(
         The typst file to be queried
     root_dir:
         The root directory of the workspace. Defaults to the current working directory.
-    label:
-        The label or labels of the blocks to be retrieved. If an executer is registered
-        for a given block language, the block will be run and its output will be saved
-        to the cache. If not specified, every language with a registered executer
-        will be run.
+    langs:
+        The language or languages of the blocks to be retrieved. If an executer is
+        registered for a given block language, the block will be run and its output will
+        be saved to the cache. If not specified, every language with a registered
+        executer will be run.
     config:
         The path to a config file for the executer. If not specified, the default config
         will be used. Optionally, a dictionary can be passed in directly.
@@ -341,13 +341,13 @@ def execute(
     config = t.cast(dict, user_config)
 
     runner = CodeRunner(root_dir or os.getcwd(), config=config)
-    if labels is None:
-        labels = sorted(set(list(runner.language_executer_map) + list(runner.config)))
+    if langs is None:
+        langs = sorted(set(list(runner.language_executer_map) + list(runner.config)))
     # runner.logger.setLevel("DEBUG")
     runner.logger.addHandler(logging.StreamHandler(sys.stdout))
-    runner.run(file, labels=labels)
+    runner.run(file, langs=langs)
 
 
 if __name__ == "__main__":
-    out = execute("examples/external-code.typ", labels=["r"])
+    out = execute("examples/external-code.typ", langs=["r"])
     x = out
