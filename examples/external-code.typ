@@ -3,7 +3,7 @@
 
 #show raw: it => {
   let kwargs = if it.block {
-    (width: 100%, line-numbers: true)
+    (width: 100%, line-numbers: false)
   } else {
     (inline: true)
   }
@@ -98,4 +98,35 @@ fib() {
 }
 # Not memoized, so use a much smaller number
 fib 10
+```
+
+```js
+var cache = {};
+function fib(n) {
+    if (n < 2) {
+        return n;
+    }
+    if (cache[n] !== undefined) {
+        return cache[n];
+    }
+    cache[n] = fib(n-1) + fib(n-2);
+    return cache[n];
+}
+fib(50);
+```
+
+```r
+fib <- local({
+  memory <- list()
+  function(x) {
+    valueName <- as.character(x)
+    if (!is.null(memory[[valueName]])) return(memory[[valueName]])
+    if (x == 0) return(0)
+    if (x == 1) return(1)
+    res <- Recall(x - 1) + Recall(x - 2)
+    memory[[valueName]] <<- res # store results
+    res
+  }
+})
+print(fib(50))
 ```

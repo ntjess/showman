@@ -1,20 +1,123 @@
 from __future__ import annotations
 
 import ast
-import inspect
 import json
 import logging
 import os
-import re
+import signal
 import subprocess
 import sys
 import tempfile
+import time
 import typing as t
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
 
-from showman.common import FilePath, OptionalFilePath, StrList
+from omegaconf import OmegaConf
+from pexpect.popen_spawn import PopenSpawn
+from pexpect.replwrap import REPLWrapper
+
+from showman.common import (
+    FilePath,
+    OptionalFilePath,
+    StrList,
+    read_config,
+    read_showman_config,
+)
+
+
+class ExecuterOptions(t.TypedDict):
+    command: str
+    prompt: str | list[str]
+    preamble: str
+    repl: bool
+    filename: str
+
+
+class SpawnWrapper(PopenSpawn):
+    def __init__(self, cmd, *args, echo=False, encoding="utf-8", **kwargs):
+        super().__init__(cmd, *args, encoding=encoding, **kwargs)
+        self.echo = echo
+        self.cmd = cmd
+        # API compatibility to manage self as if it were a REPLWrapper
+        self.child = self
+
+    def __str__(self):
+        return f"<SpawnWrapper: {self.cmd}>"
+
+    def run_command(self, command: str, timeout=5):
+        self.sendline(command)
+        now = time.time()
+        output = []
+        while time.time() - now < timeout:
+            try:
+                result = self.read_nonblocking(size=100, timeout=1).strip()
+                if result:
+                    output.append(result)
+            except Exception:
+                break
+        return "".join(output)
+
+
+class ShellExecuter:
+    def __init__(self, language: str, config: ExecuterOptions, timeout=5):
+        self.config = config
+        self.language = language
+        self.timeout = config.get("timeout", timeout)
+
+        self.repl: t.Optional[REPLWrapper | SpawnWrapper] = None
+        self.build_dir: Path | None = None
+        if self.config.get("repl"):
+            self.repl = self._init_repl()
+
+    def __repr__(self):
+        return f"<ShellExecuter: {self.language}>"
+
+    def _init_repl(self):
+        cfg = self.config
+        self.build_dir = Path(tempfile.mkdtemp())
+        proc = SpawnWrapper(cfg["command"], cwd=self.build_dir)
+        prompt = cfg["prompt"]
+        if prompt:
+            kwargs = {}
+            if not isinstance(prompt, str):
+                prompt, continue_prompt = prompt
+                kwargs["continuation_prompt"] = continue_prompt
+
+            proc = REPLWrapper(proc, prompt, None, **kwargs)
+        if preamble := cfg.get("preamble", ""):
+            proc.run_command(preamble + "\n", timeout=self.timeout)
+        return proc
+
+    def _run_standalone_command(self, code: str):
+        cfg = self.config
+        with tempfile.TemporaryDirectory() as build_dir:
+            filename = cfg.get("filename", f"main.{self.language}")
+            build_file = Path(build_dir) / Path(filename).name
+            preamble = cfg.get("preamble", "")
+            build_file.write_text("\n".join([preamble, code]))
+            out = subprocess.check_output(
+                cfg["command"], shell=True, text=True, cwd=build_dir
+            )
+        return out
+
+    def __call__(self, code: str):
+        code += "\n"
+        if self.repl is None:
+            return self._run_standalone_command(code)
+        return self.repl.run_command(code)
+
+    def cleanup(self):
+        if self.repl is not None:
+            self.repl.child.kill(signal.SIGINT)
+            # Wait for the process to die
+            self.repl.child.read_nonblocking(size=100, timeout=1)
+        if self.build_dir is not None:
+            self.build_dir.rmdir()
+
+    def __del__(self):
+        self.cleanup()
 
 
 class PythonExecuter:
@@ -36,6 +139,13 @@ class PythonExecuter:
         -------
         The value of the last expression, if any, else None.
         """
+
+        def scope_exec(code):
+            return exec(code, globals_, locals_)
+
+        def scope_eval(code):
+            return eval(code, globals_, locals_)
+
         if globals_ is None:
             globals_ = globals()
         try:
@@ -44,22 +154,12 @@ class PythonExecuter:
             if isinstance(parsed_code.body[-1], ast.Expr):
                 *rest_of_code, last_expr = parsed_code.body
                 last_expr = t.cast(ast.Expr, last_expr)
-                exec(
-                    compile(
-                        ast.Module(body=rest_of_code, type_ignores=[]),
-                        "<string>",
-                        "exec",
-                    ),
-                    globals_,
-                    locals_,
-                )
-                return eval(
-                    compile(ast.Expression(last_expr.value), "<string>", "eval"),
-                    globals_,
-                    locals_,
-                )
+                module = ast.Module(body=rest_of_code, type_ignores=[])
+                expr = ast.Expression(last_expr.value)
+                scope_exec(compile(module, "<string>", "exec"))
+                return scope_eval(compile(expr, "<string>", "eval"))
             else:
-                exec(code_string, globals_, locals_)
+                scope_exec(code_string)
                 return None
         except SyntaxError as se:
             return f"SyntaxError: {se}"
@@ -75,9 +175,9 @@ class PythonExecuter:
             return "\n".join([stdout, result])
         return [stdout, result]
 
-    def __call__(self, block: str):
+    def __call__(self, code: str):
         with redirect_stdout(StringIO()) as f:
-            result = self.exec_and_maybe_eval_last_line(block)
+            result = self.exec_and_maybe_eval_last_line(code)
             printed = f.getvalue()
         if result is not None:
             # In the future (when typst supports pdf/html embeds), we can parse using
@@ -86,32 +186,13 @@ class PythonExecuter:
         return self._resolve_return_value(printed, result)
 
 
-def bash_executer(block: str):
-    out = subprocess.check_output(block, shell=True, text=True)
-    return out
-
-
-def cpp_executer(block: str, compiler="g++"):
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmpdir = Path(tmpdir)
-        cpp_file = tmpdir / "main.cpp"
-        cpp_file.write_text(block)
-        out = subprocess.check_output(
-            f"{compiler} {cpp_file} -o {tmpdir}/main && {tmpdir}/main",
-            shell=True,
-            text=True,
-        )
-    return out
-
-
 class CodeRunner:
-    language_executer_map: t.Dict[str, t.Callable] = dict(
-        python=PythonExecuter(), cpp=cpp_executer
-    )
-    if sys.platform != "win32":
-        language_executer_map["bash"] = bash_executer
+    language_executer_map: t.Dict[str, t.Callable] = dict(python=PythonExecuter())
+    if sys.platform == "win32":
+        language_executer_map["bash"] = lambda _: "<bash is not supported on Windows>"
 
-    def __init__(self, workspace_dir: FilePath):
+    def __init__(self, workspace_dir: FilePath, config: dict | None = None):
+        self.config = config or {}
         self.workspace_dir = Path(workspace_dir).resolve()
         self.logger = logging.getLogger(__name__)
 
@@ -191,8 +272,12 @@ class CodeRunner:
         -------
         A list of stdout outputs from each block evaluation
         """
-        if language not in self.language_executer_map:
+        if language not in self.language_executer_map and language not in self.config:
             raise ValueError(f"Language `{language}` not supported")
+        elif language not in self.language_executer_map:
+            self.language_executer_map[language] = ShellExecuter(
+                language, self.config[language]
+            )
         outputs = []
         for block in blocks:
             self.logger.debug(f"Executing block:\n{block}")
@@ -206,6 +291,8 @@ class CodeRunner:
             labels = [labels]
         for label in labels:
             blocks = self.get_labeled_blocks(typst_file, label=label)
+            if not blocks:
+                continue
             outputs = self.exec_blocks_and_capture_outputs(blocks, language=label)
             self.update_cache(typst_file, label, outputs)
         if save_cache:
@@ -216,6 +303,8 @@ def execute(
     file: FilePath,
     root_dir: OptionalFilePath = None,
     labels: StrList | None = None,
+    config: str | dict | None = None,
+    dotlist: str | None = None,
 ):
     """
     Executes external code in a typst file based on the code block labels.
@@ -231,14 +320,34 @@ def execute(
         for a given block language, the block will be run and its output will be saved
         to the cache. If not specified, every language with a registered executer
         will be run.
+    config:
+        The path to a config file for the executer. If not specified, the default config
+        will be used. Optionally, a dictionary can be passed in directly.
+    dotlist:
+        Can be provided alongside config to modify specific values. If multiple values are
+        provided, they must be separated with a double semicolon. For instance, to change
+        executer commands both for R and add a preamble to javascript blocks, you could
+        provide
+        ``dotlist="r.command='Rscript --my-flags';; js.preamble='let x = 5'"``. You
+        can view more information on dotlist syntax at
+        https://omegaconf.readthedocs.io/en/latest/usage.html
     """
-    runner = CodeRunner(root_dir or os.getcwd())
+    user_config = OmegaConf.merge(
+        read_showman_config()["executer"], read_config(config)
+    )
+    if dotlist is not None:
+        dotlist_fmt = [line.strip() for line in dotlist.split(";;")]
+        user_config = OmegaConf.merge(config, OmegaConf.from_dotlist(dotlist_fmt))
+    config = t.cast(dict, user_config)
+
+    runner = CodeRunner(root_dir or os.getcwd(), config=config)
     if labels is None:
-        labels = list(runner.language_executer_map)
+        labels = sorted(set(list(runner.language_executer_map) + list(runner.config)))
     # runner.logger.setLevel("DEBUG")
     runner.logger.addHandler(logging.StreamHandler(sys.stdout))
     runner.run(file, labels=labels)
 
 
 if __name__ == "__main__":
-    execute("examples/external-code.typ", labels=["python"])
+    out = execute("examples/external-code.typ", labels=["r"])
+    x = out

@@ -1,0 +1,27 @@
+[executer.cpp]
+command = "g++ main.cpp -o main && main"
+
+[executer.py]
+repl = true
+prompt = ">>> "
+command = "python -iqu"
+
+[executer.js]
+repl = true
+prompt = ["> ", "... "]
+command = "node -e \"require('repl').start({ignoreUndefined: true})\""
+
+[executer.c]
+command = "gcc main.c -o main && main"
+
+[executer.r]
+repl = true
+prompt = ""
+command = "Rterm -q --ess --no-save --no-echo"
+
+[executer.rs]
+command = "rustc main.rs && main"
+
+[executer.bash]
+filename = "main.sh"
+command = "bash main.sh"
