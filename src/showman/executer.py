@@ -334,7 +334,7 @@ def execute(
     )
     if dotlist is not None:
         dotlist_fmt = [line.strip() for line in dotlist.split(";;")]
-        user_config = OmegaConf.merge(config, OmegaConf.from_dotlist(dotlist_fmt))
+        user_config = OmegaConf.merge(user_config, OmegaConf.from_dotlist(dotlist_fmt))
     config = t.cast(dict, user_config)
 
     runner = CodeRunner(root_dir or os.getcwd(), config=config)
