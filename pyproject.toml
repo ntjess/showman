@@ -10,7 +10,14 @@ requires-python = ">=3.9"
 license = "MIT"
 keywords = []
 authors = [{ name = "Nathan Jessurun", email = "ntjessu@gmail.com" }]
-dependencies = ["fire", "omegaconf", "packaging", "pypandoc", "tomli"]
+dependencies = [
+    "fire",
+    "omegaconf",
+    "packaging",
+    "pexpect",
+    "pypandoc",
+    "tomli",
+]
 dynamic = ["version"]
 
 [project.scripts]
