@@ -24,5 +24,6 @@ output-transform = "re.sub('^\\[\\d+\\] ', '', output)"
 command = "rustc main.rs && main"
 
 [executer.bash]
-filename = "main.sh"
-command = "bash main.sh"
+repl = true
+prompt = ""
+command = "bash"
