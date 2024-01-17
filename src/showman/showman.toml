@@ -17,8 +17,8 @@ command = "gcc main.c -o main && main"
 [executer.r]
 repl = true
 prompt = ""
-command = "R -q --ess --no-save --no-echo"
-output-transform = "re.sub('^\\[\\d+\\] ', '', output)"
+command = "R -q --no-save --no-echo"
+output-transform = "re.sub('^\\[\\d+\\]\\s?', '', output)"
 
 [executer.rs]
 command = "rustc main.rs && main"
