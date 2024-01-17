@@ -316,7 +316,8 @@ def execute(
         The language or languages of the blocks to be retrieved. If an executer is
         registered for a given block language, the block will be run and its output will
         be saved to the cache. If not specified, every language with a registered
-        executer will be run.
+        executer will be run. Note that several languages can be specified as a
+        space-separated string.
     config:
         The path to a config file for the executer. If not specified, the default config
         will be used. Optionally, a dictionary can be passed in directly.
@@ -340,11 +341,17 @@ def execute(
     runner = CodeRunner(root_dir or os.getcwd(), config=config)
     if langs is None:
         langs = sorted(set(list(runner.language_executer_map) + list(runner.config)))
+    if isinstance(langs, str):
+        langs = langs.split()
     # runner.logger.setLevel("DEBUG")
     runner.logger.addHandler(logging.StreamHandler(sys.stdout))
     runner.run(file, langs=langs)
 
 
 if __name__ == "__main__":
-    out = execute("examples/external-code.typ", langs=["r"])
+    out = execute(
+        "examples/external-code.typ",
+        langs=["r"],
+        dotlist="r.command=R --ess --no-echo --no-save --interactive",
+    )
     x = out
