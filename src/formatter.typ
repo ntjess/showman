@@ -29,7 +29,12 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
   filled-container(it, ..background-kwargs)
 }
 
-#let show-only-labels(body, labels: (), template: none, use-box: true) = {
+#let show-only-labels(body,
+  labels: (),
+  template: none,
+  use-box: true,
+  page-size: (width: auto, height: auto),
+) = {
   if type(labels) == label {
     labels = (labels,)
   }
@@ -42,7 +47,7 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
   if template == none {
     template = it => it
   }
-  set page(height: auto, width: auto, margin: 0pt)
+  set page(..page-size, margin: 0pt)
   
   if use-box {
     box(width: 0pt, height: 0pt, clip: true, body)
@@ -71,10 +76,15 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
 
   let showman-config = __default-config + showman-config + updated-config.named()
   
-  let template = showman-config.at("template", default: none)
+  let show-lbls-kwargs = (:)
+  for key in ("template", "page-size") {
+    if key in showman-config {
+      show-lbls-kwargs.insert(key, showman-config.at(key))
+    }
+  }
 
   show: show-only-labels.with(
-    labels: showman-config.showable-labels, template: template, use-box: false
+    labels: showman-config.showable-labels, ..show-lbls-kwargs, use-box: false
   )
 
   show raw: raw-with-eval.with(
