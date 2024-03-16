@@ -114,6 +114,9 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
   scope: (:),
   container: bidirectional-grid,
 ) = {
+  let input-source = raw-content.text
+  let lang = raw-content.at("lang", default: "default")
+  [#metadata(input-source)#label(lang)]
   let pieces = (eval-prefix, raw-content.text, eval-suffix)
   if unpack-modules {
     pieces.insert(0, wildcard-import-string-from-modules(scope))
@@ -139,6 +142,8 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
     }
     all-blocks.push("#let output = (content) => { content }")
     all-blocks.push(eval-prefix)
+    let lang = raw-content.at("lang", default: "default")
+    [#metadata(raw-content.text)#label(lang)]
     standalone-example(
       raw-content, eval-prefix: all-blocks.join("\n"), eval-suffix: eval-suffix, ..args
     )
