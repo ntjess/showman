@@ -86,13 +86,13 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
     old.insert(lang, old.at(lang, default: -1) + 1)
     old
   })
-  locate(loc => {
-    let idx = label-counters.at(loc).at(lang)
+  context {
+    let idx = label-counters.get().at(lang)
     let fetched = _fetch-result-from-cache(result-cache.at(lang, default: ()), index: idx)
     let output = [#fetched#config.output-label]
     let input = [#raw-content#config.input-label]
     container(direction: direction, input, output)
-  })
+  }
 }
 
 #let wildcard-import-string-from-modules(scope) = {
@@ -129,10 +129,10 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
 
 
 #let global-example(raw-content, eval-prefix: "", eval-suffix: "", ..args) = {
-  locate(loc => {
+  context {
     let all-blocks = ()
     all-blocks.push("#let output = (body) => {}")
-    for block in example-blocks.at(loc) {
+    for block in example-blocks.get() {
       all-blocks.push(eval-prefix)
       all-blocks.push(block)
       all-blocks.push(eval-suffix)
@@ -142,7 +142,7 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
     standalone-example(
       raw-content, eval-prefix: all-blocks.join("\n"), eval-suffix: eval-suffix, ..args
     )
-  })
+  }
   example-blocks.update(old => {
     old.push(raw-content.text)
     old

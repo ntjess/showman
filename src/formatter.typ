@@ -55,8 +55,8 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
     hide(body)
   }
   
-  locate(loc => {
-    let outputs = query(to-search, loc)
+  context {
+    let outputs = query(to-search)
     for output in outputs {
       pagebreak(weak: true)
       {
@@ -64,7 +64,7 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
         block(output, above: 0pt, below: 0pt, breakable: false)
       }
     }
-  })
+  }
 }
 
 #let _content-printer(typst-file, ..updated-config) = {
