@@ -95,7 +95,7 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
   })
 }
 
-#let wilcard-import-string-from-modules(scope) = {
+#let wildcard-import-string-from-modules(scope) = {
   let preamble = ()
   for key in scope.keys() {
     if type(scope.at(key)) == module {
@@ -116,7 +116,7 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
 ) = {
   let pieces = (eval-prefix, raw-content.text, eval-suffix)
   if unpack-modules {
-    pieces.insert(0, wilcard-import-string-from-modules(scope))
+    pieces.insert(0, wildcard-import-string-from-modules(scope))
   }
   let output = eval(pieces.join("\n"), mode: "markup", scope: scope)
 
