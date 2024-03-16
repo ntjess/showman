@@ -1,4 +1,4 @@
-#import "@preview/showman:0.1.0": runner, formatter
+#import "@preview/showman:0.1.1": runner, formatter
 #set page(height: auto)
 
 #show raw: it => {

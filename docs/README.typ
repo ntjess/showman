@@ -1,4 +1,4 @@
-#import "@preview/showman:0.1.0": formatter
+#import "@preview/showman:0.1.1": formatter
 
 #set page(height: auto)
 #show: formatter.template.with(
@@ -113,7 +113,7 @@ that gets prefixed to every example. Alternatively, pass variables in a scope di
 If you don't care about converting your readme to markdown, it's even easier to have example rendered alongside their code. Simply add the following preamble to your file:
 
 ````typst
-#import "@preview/showman:0.1.0"
+#import "@preview/showman:0.1.1"
 #show: showman.formatter.template
 
 The code below will be rendered side by side with its output:
@@ -163,7 +163,7 @@ To enable this feature, you need to add the following preamble to your file:
 
 ```typ
 
-#import "@preview/showman:0.1.0": runner
+#import "@preview/showman:0.1.1": runner
 
 #let cache = json("/.coderunner.json").at("path/to/file.typ", default: (:))
 #let show-rule = runner.external-code.with(result-cache: cache)
