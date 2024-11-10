@@ -16,20 +16,25 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
 #let _add-raw-line-numbers(it) = {
   box(
     grid(columns: 2, column-gutter: 0.5em)[
-      #style(styles => {
-        let reserved = measure(text[#it.count], styles).width
+      #context {
+        let reserved = measure(text[#it.count]).width
         box(text(fill: gray)[#it.number], width: reserved)
-      })
-    ][#it]
+      }
+    ][#it],
   )
 }
 
 #let format-raw(it, line-numbers: false, ..background-kwargs) = {
-  show raw.line: it => if line-numbers { _add-raw-line-numbers(it) } else { it }
+  show raw.line: it => if line-numbers {
+    _add-raw-line-numbers(it)
+  } else {
+    it
+  }
   filled-container(it, ..background-kwargs)
 }
 
-#let show-only-labels(body,
+#let show-only-labels(
+  body,
   labels: (),
   template: none,
   use-box: true,
@@ -48,13 +53,13 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
     template = it => it
   }
   set page(..page-size, margin: 0pt)
-  
+
   if use-box {
     box(width: 0pt, height: 0pt, clip: true, body)
   } else {
     hide(body)
   }
-  
+
   context {
     let outputs = query(to-search)
     for output in outputs {
@@ -75,7 +80,7 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
   // This will happen automatically through the wildcard import
 
   let showman-config = __default-config + showman-config + updated-config.named()
-  
+
   let show-lbls-kwargs = (:)
   for key in ("template", "page-size") {
     if key in showman-config {
@@ -84,14 +89,16 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
   }
 
   show: show-only-labels.with(
-    labels: showman-config.showable-labels, ..show-lbls-kwargs, use-box: false
+    labels: showman-config.showable-labels,
+    ..show-lbls-kwargs,
+    use-box: false,
   )
 
   show raw: raw-with-eval.with(
     langs: showman-config.runnable-langs,
     eval-kwargs: showman-config.at("eval-kwargs", default: (:)),
   )
-  include(typst-file)
+  include (typst-file)
 }
 
 #let template(
@@ -118,7 +125,7 @@ Inspiration: https://github.com/typst/packages/blob/main/packages/preview/cetz/0
   show raw: raw-with-eval.with(langs: runnable-langs, ..runnable-kwargs)
   show config.output-label: format-raw.with(..block-style)
 
-  set text(font: "Linux Libertine")
+  set text(font: "Libertinus Serif")
   // Add variables here to avoid triggering error in Pandoc 3.1.10
   let _ = ""
   if theme == "dark" {
