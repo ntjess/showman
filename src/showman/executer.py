@@ -248,7 +248,7 @@ class CodeRunner:
             f' "{selector}"'
             f" --field value"
             f" --format json"
-            f" --root {workspace_dir}"
+            f' --root "{workspace_dir}"'
         )
         self.logger.debug(f"Running command: {cmd}")
         workspace_dir = os.getcwd()
